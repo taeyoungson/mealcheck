@@ -4,6 +4,7 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#071725">
   <meta name="description" content="아시아나 A380 이코노미 밀체크 시뮬레이터">
   <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script>try{if(localStorage.getItem("meal-check-theme")==="dark")document.documentElement.dataset.theme="dark"}catch(_){}</script>
   <title>Meal Check · A380 밀체크</title>
   <link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="apple-touch-icon" sizes="192x192" href="icon-192.png"><link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles3.css">
@@ -13,7 +14,7 @@
     <div class="brand-block"><button class="menu-button" id="open-schedules" type="button" aria-label="비행 일정 열기" aria-expanded="false"><span></span><span></span><span></span></button><div class="brand-mark" aria-hidden="true">MC</div><div><p class="eyebrow" id="active-flight-label">ASIANA A380 · ECONOMY</p><h1>Meal Check</h1></div></div>
     <div class="top-actions">
       <div class="capacity-strip" aria-label="장비 용량"><span>B 오븐 <strong>128</strong></span><span>C/D 오븐 <strong>192</strong></span><span>W 오븐 <strong>128</strong></span><span>카트 <strong>28</strong></span></div>
-      <span class="offline-status" id="offline-status">오프라인 준비 중</span><button class="ghost-button" id="reset-all" type="button">전체 초기화</button>
+      <span class="offline-status" id="offline-status">오프라인 준비 중</span><button class="theme-toggle" id="theme-toggle" type="button" aria-label="야간 모드로 전환" title="야간 모드로 전환"><span id="theme-icon" aria-hidden="true">☾</span></button><button class="ghost-button" id="reset-all" type="button">전체 초기화</button>
     </div>
   </header>
   <div class="drawer-backdrop" id="drawer-backdrop" hidden>

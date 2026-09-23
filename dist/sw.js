@@ -1,4 +1,4 @@
-const CACHE_NAME = "meal-check-v6";
+const CACHE_NAME = "meal-check-v7";
 const APP_ASSETS = ["./", "./index.html", "./styles3.css", "./engine3.js", "./app3.js", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {
