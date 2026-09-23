@@ -57,6 +57,76 @@
   const anyExecuting = () => state.services.some((service) => service.execution);
   const resultNow = () => active().execution?.result || Engine.validateService(state.passengers, state.wPassengers, active().menus, { firstService: state.activeService === 0, specialRequests: active().specialRequests });
   const touch = () => { state.sample = false; document.querySelectorAll(".sample-value").forEach((el) => el.classList.remove("sample-value")); $("#sample-badge").hidden = true; persistCurrent(); };
+  const quickEntrySupported = () => window.matchMedia("(max-width: 820px), (pointer: coarse)").matches;
+  let quickEntry = null;
+
+  function quickCurrent() {
+    return quickEntry?.inputs[quickEntry.index] || null;
+  }
+
+  function renderQuickEntry() {
+    const input = quickCurrent();
+    if (!input) return;
+    quickEntry.inputs.forEach((item) => item.classList.toggle("quick-active", item === input));
+    const row = input.closest(".inventory-row");
+    const galley = input.closest(".galley-entry");
+    const zoneInputs = quickEntry.inputs.filter((item) => item.closest(".galley-entry") === galley);
+    const zonePosition = zoneInputs.indexOf(input) + 1;
+    const menuName = row.querySelector(".inventory-menu strong").textContent;
+    const component = input.dataset.key.endsWith("Tray") ? "트레이" : "앙트레";
+    $("#quick-entry-progress").textContent = `${active().name} · ${galley.querySelector("h3").textContent} · ${zonePosition}/${zoneInputs.length}`;
+    $("#quick-entry-title").textContent = `${menuName} · ${component}`;
+    $("#quick-entry-value").textContent = quickEntry.buffer || "0";
+    $("#quick-entry-value").classList.toggle("replace-ready", quickEntry.replaceOnDigit);
+    $("#quick-entry-prev").disabled = quickEntry.index === 0;
+    $("#quick-entry-next").textContent = quickEntry.index === quickEntry.inputs.length - 1 ? "완료" : "다음";
+  }
+
+  function selectQuickInput(index) {
+    quickEntry.index = index;
+    quickEntry.buffer = String(Math.max(0, Number(quickCurrent().value) || 0));
+    quickEntry.replaceOnDigit = true;
+    renderQuickEntry();
+  }
+
+  function openQuickEntry(input) {
+    const inputs = [...$("#service-editor").querySelectorAll(".inventory-input:not(:disabled)")];
+    const index = inputs.indexOf(input);
+    if (index < 0) return;
+    quickEntry = { inputs, index, buffer: String(Math.max(0, Number(input.value) || 0)), replaceOnDigit: true };
+    $("#quick-entry").hidden = false;
+    document.body.classList.add("quick-entry-open");
+    input.blur();
+    renderQuickEntry();
+  }
+
+  function closeQuickEntry() {
+    if (!quickEntry) return;
+    quickEntry.inputs.forEach((input) => input.classList.remove("quick-active"));
+    quickEntry = null;
+    $("#quick-entry").hidden = true;
+    document.body.classList.remove("quick-entry-open");
+    renderAll();
+  }
+
+  function setQuickValue(value) {
+    const input = quickCurrent();
+    if (!input) return;
+    const normalized = String(Math.min(9999, Math.max(0, Number(value) || 0)));
+    quickEntry.buffer = normalized;
+    quickEntry.replaceOnDigit = false;
+    input.value = normalized;
+    const item = active().menus.find((entry) => entry.id === input.dataset.menu);
+    if (item) item[input.dataset.key] = Number(normalized);
+    touch();
+    renderDynamic();
+    renderQuickEntry();
+  }
+
+  function enterQuickDigit(digit) {
+    const next = quickEntry.replaceOnDigit || quickEntry.buffer === "0" ? digit : `${quickEntry.buffer}${digit}`;
+    setQuickValue(next.slice(0, 4));
+  }
 
   function scheduleLabel(item) {
     return `${item.flightNo} · ${item.route}`;
@@ -171,10 +241,11 @@
       { id: "cd", title: "C/D 갤리", sub: "뒤 · 오븐 192", tone: "zone-cd" },
       { id: "w", title: "W 갤리", sub: "윗층 · 오븐 128", tone: "zone-w" },
     ];
+    const quickInputAttributes = quickEntrySupported() ? 'readonly inputmode="none" aria-haspopup="dialog"' : 'inputmode="numeric"';
     const galleySections = zones.map((zone) => `<section class="galley-entry ${zone.tone}">
       <div class="galley-entry-head"><div><span class="galley-order">${zone.id === "b" ? "01" : zone.id === "cd" ? "02" : "03"}</span><h3>${zone.title}</h3></div><small>${zone.sub}</small></div>
       <div class="inventory-table-head"><span>메뉴</span><span>트레이</span><span>앙트레</span></div>
-      ${service.menus.map((item, index) => `<div class="inventory-row${item.special ? " special-row" : ""}"><div class="inventory-menu"><span>${item.special ? "S" : index + 1}</span><strong>${esc(item.name)}</strong><small>${item.special ? `${zone.title} 신청 ${service.specialRequests[zone.id]}명` : `${esc(item.type)} · ${item.ratio}%`}</small></div><label><span>${esc(item.name)} 트레이</span><input class="sample-value inventory-input ${zone.id}-tray${lockedClass}" data-menu="${item.id}" data-key="${zone.id}Tray" data-numeric="true" type="number" min="0" inputmode="numeric" value="${item[`${zone.id}Tray`]}" ${disabled}></label><label><span>${esc(item.name)} 앙트레</span><input class="sample-value inventory-input ${zone.id}-entree${lockedClass}" data-menu="${item.id}" data-key="${zone.id}Entree" data-numeric="true" type="number" min="0" inputmode="numeric" value="${item[`${zone.id}Entree`]}" ${disabled}></label></div>`).join("")}
+      ${service.menus.map((item, index) => `<div class="inventory-row${item.special ? " special-row" : ""}"><div class="inventory-menu"><span>${item.special ? "S" : index + 1}</span><strong>${esc(item.name)}</strong><small>${item.special ? `${zone.title} 신청 ${service.specialRequests[zone.id]}명` : `${esc(item.type)} · ${item.ratio}%`}</small></div><label><span>${esc(item.name)} 트레이</span><input class="sample-value inventory-input ${zone.id}-tray${lockedClass}" data-menu="${item.id}" data-key="${zone.id}Tray" data-numeric="true" type="number" min="0" ${quickInputAttributes} value="${item[`${zone.id}Tray`]}" ${disabled}></label><label><span>${esc(item.name)} 앙트레</span><input class="sample-value inventory-input ${zone.id}-entree${lockedClass}" data-menu="${item.id}" data-key="${zone.id}Entree" data-numeric="true" type="number" min="0" ${quickInputAttributes} value="${item[`${zone.id}Entree`]}" ${disabled}></label></div>`).join("")}
     </section>`).join("");
     host.innerHTML = `<div class="service-heading"><div><h3>${esc(service.name)} 입력</h3></div><div class="menu-actions"><button class="small-button" id="add-menu" type="button" ${disabled}>＋ 메뉴</button></div></div>
       <section class="special-requests"><div class="section-title"><div><span>스페셜밀 신청자</span></div></div><div class="special-request-grid">
@@ -191,6 +262,7 @@
       input.addEventListener("change", () => { item[input.dataset.key] = input.dataset.numeric ? Number(input.value) : input.value; if (input.dataset.key === "name" || input.dataset.key === "type") renderAll(); else renderDynamic(); });
     });
     host.querySelectorAll("[data-request]").forEach((input) => input.addEventListener("input", () => { service.specialRequests[input.dataset.request] = Number(input.value); touch(); renderDynamic(); }));
+    if (quickEntrySupported() && !locked) host.querySelectorAll(".inventory-input").forEach((input) => input.addEventListener("click", () => openQuickEntry(input)));
     host.querySelectorAll("[data-remove]").forEach((button) => button.addEventListener("click", () => { const index = service.menus.findIndex((item) => item.id === button.dataset.remove); service.menus.splice(index, 1); touch(); renderAll(); }));
     $("#add-menu", host).addEventListener("click", () => { const specialIndex = service.menus.findIndex((item) => item.special); service.menus.splice(specialIndex < 0 ? service.menus.length : specialIndex, 0, menu("새 메뉴", "기타", 0, 0, 0, 0, 0, 0, 0)); touch(); renderAll(); });
     $("#remove-service", host)?.addEventListener("click", () => { state.services.splice(state.activeService, 1); state.activeService = Math.max(0, state.activeService - 1); state.rightView = "diagnosis"; touch(); renderAll(); });
@@ -318,6 +390,22 @@
     closeDrawer();
     renderAll();
   });
+  $("#quick-entry").addEventListener("click", (event) => { if (event.target === $("#quick-entry")) closeQuickEntry(); });
+  $("#quick-entry-close").addEventListener("click", closeQuickEntry);
+  $("#quick-entry-prev").addEventListener("click", () => { if (quickEntry?.index > 0) selectQuickInput(quickEntry.index - 1); });
+  $("#quick-entry-next").addEventListener("click", () => {
+    if (!quickEntry) return;
+    if (quickEntry.index === quickEntry.inputs.length - 1) closeQuickEntry();
+    else selectQuickInput(quickEntry.index + 1);
+  });
+  $("#quick-entry").querySelectorAll("[data-quick-digit]").forEach((button) => button.addEventListener("click", () => enterQuickDigit(button.dataset.quickDigit)));
+  $("#quick-entry").querySelector('[data-quick-action="clear"]').addEventListener("click", () => setQuickValue("0"));
+  $("#quick-entry").querySelector('[data-quick-action="backspace"]').addEventListener("click", () => {
+    if (!quickEntry) return;
+    const next = quickEntry.replaceOnDigit ? "0" : quickEntry.buffer.slice(0, -1) || "0";
+    setQuickValue(next);
+  });
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape" && quickEntry) closeQuickEntry(); });
 
   function updateOfflineStatus(status, failed = false) {
     const badge = $("#offline-status");

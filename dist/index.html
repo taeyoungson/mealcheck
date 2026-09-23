@@ -34,6 +34,22 @@
       <button class="primary-button" type="submit">일정 생성</button>
     </form>
   </div>
+  <div class="quick-entry-backdrop" id="quick-entry" hidden>
+    <section class="quick-entry-sheet" role="dialog" aria-modal="true" aria-labelledby="quick-entry-title">
+      <div class="quick-entry-head">
+        <div><span id="quick-entry-progress"></span><h2 id="quick-entry-title"></h2></div>
+        <button class="quick-close" id="quick-entry-close" type="button" aria-label="빠른 입력 닫기">×</button>
+      </div>
+      <output class="quick-entry-value" id="quick-entry-value"></output>
+      <div class="quick-keypad" aria-label="숫자 키패드">
+        <button type="button" data-quick-digit="1">1</button><button type="button" data-quick-digit="2">2</button><button type="button" data-quick-digit="3">3</button>
+        <button type="button" data-quick-digit="4">4</button><button type="button" data-quick-digit="5">5</button><button type="button" data-quick-digit="6">6</button>
+        <button type="button" data-quick-digit="7">7</button><button type="button" data-quick-digit="8">8</button><button type="button" data-quick-digit="9">9</button>
+        <button class="quick-key-subtle" type="button" data-quick-action="clear">지움</button><button type="button" data-quick-digit="0">0</button><button class="quick-key-subtle" type="button" data-quick-action="backspace" aria-label="한 자리 지우기">⌫</button>
+      </div>
+      <div class="quick-entry-nav"><button id="quick-entry-prev" type="button">이전</button><button id="quick-entry-next" type="button">다음</button></div>
+    </section>
+  </div>
   <main class="app-shell">
     <section class="input-panel" aria-label="밀체크 입력">
       <div class="panel-heading"><div><span class="step-kicker">01 · 입력</span><h2>서비스 조건</h2></div><span class="sample-badge" id="sample-badge">예시 데이터</span></div>
