@@ -1,6 +1,6 @@
 {
-  "name": "Meal Flow · A380 밀체크",
-  "short_name": "Meal Flow",
+  "name": "Meal Check · A380 밀체크",
+  "short_name": "Meal Check",
   "description": "아시아나 A380 이코노미 밀체크 및 갤리 배분 도구",
   "lang": "ko",
   "start_url": "./",
