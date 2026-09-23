@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#071725">
+  <meta name="description" content="아시아나 A380 이코노미 밀체크 시뮬레이터">
+  <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Meal Flow · A380 밀체크</title>
+  <link rel="icon" type="image/svg+xml" href="icon.svg"><link rel="apple-touch-icon" sizes="192x192" href="icon-192.png"><link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles3.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-block"><button class="menu-button" id="open-schedules" type="button" aria-label="비행 일정 열기" aria-expanded="false"><span></span><span></span><span></span></button><div class="brand-mark" aria-hidden="true">MF</div><div><p class="eyebrow" id="active-flight-label">ASIANA A380 · ECONOMY</p><h1>Meal Flow</h1></div></div>
+    <div class="top-actions">
+      <div class="capacity-strip" aria-label="장비 용량"><span>B 오븐 <strong>128</strong></span><span>C/D 오븐 <strong>192</strong></span><span>W 오븐 <strong>128</strong></span><span>카트 <strong>28</strong></span></div>
+      <span class="offline-status" id="offline-status">오프라인 준비 중</span><button class="ghost-button" id="reset-all" type="button">전체 초기화</button>
+    </div>
+  </header>
+  <div class="drawer-backdrop" id="drawer-backdrop" hidden>
+    <aside class="schedule-drawer" id="schedule-drawer" aria-label="비행 일정">
+      <div class="drawer-head"><div><span class="step-kicker">최근 5개</span><h2>비행 일정</h2></div><button class="icon-button" id="close-schedules" type="button" aria-label="일정 닫기">×</button></div>
+      <button class="new-schedule-button" id="new-schedule" type="button">＋ 새 비행 일정</button>
+      <div class="schedule-list" id="schedule-list"></div>
+      <p class="drawer-note">일정과 밀체크 내용은 이 기기에만 저장됩니다.</p>
+    </aside>
+  </div>
+  <div class="modal-backdrop" id="schedule-modal" hidden>
+    <form class="schedule-modal" id="schedule-form">
+      <div class="modal-heading"><div><span class="step-kicker">새 일정</span><h2>비행 정보</h2></div><button class="icon-button" id="cancel-schedule" type="button" aria-label="취소">×</button></div>
+      <label><span>비행 날짜</span><input id="schedule-date" type="date" required></label>
+      <label><span>편명</span><input id="schedule-flight" type="text" placeholder="예: OZ201" maxlength="12" required></label>
+      <label><span>구간</span><input id="schedule-route" type="text" placeholder="예: ICN → LAX" maxlength="30" required></label>
+      <p>식사 2회, 각 일반 메뉴 2개(50/50)와 스페셜밀로 시작합니다.</p>
+      <button class="primary-button" type="submit">일정 생성</button>
+    </form>
+  </div>
+  <main class="app-shell">
+    <section class="input-panel" aria-label="밀체크 입력">
+      <div class="panel-heading"><div><span class="step-kicker">01 · 입력</span><h2>서비스 조건</h2></div><span class="sample-badge" id="sample-badge">예시 데이터</span></div>
+      <div class="flight-inputs">
+        <label class="field"><span>전체 이코노미 승객</span><span class="number-wrap"><input id="passengers" class="sample-value" type="number" inputmode="numeric" min="1" max="417" value="400"><small>/ 417</small></span></label>
+        <label class="field"><span>W존 승객 <em>윗층</em></span><span class="number-wrap"><input id="w-passengers" class="sample-value" type="number" inputmode="numeric" min="0" max="106" value="100"><small>/ 106</small></span></label>
+        <div class="derived-main"><span>메인덱 승객</span><strong id="main-passengers">300명</strong><small>B와 C/D가 나눠 서비스</small></div>
+      </div>
+      <div class="service-bar"><div class="service-tabs" id="service-tabs" role="tablist" aria-label="식사 서비스 선택"></div><button class="add-service" id="add-service" type="button">＋ 식사 추가</button></div>
+      <div id="service-editor"></div>
+    </section>
+    <aside class="side-panel" id="side-panel" aria-label="진단 및 작업 순서">
+      <div class="side-tabs" role="tablist" aria-label="오른쪽 패널 보기">
+        <button id="show-diagnosis" class="side-tab active" type="button" role="tab" aria-selected="true">진단</button>
+        <button id="show-tasks" class="side-tab" type="button" role="tab" aria-selected="false">작업 순서 <span id="task-count"></span></button>
+      </div>
+      <div id="diagnosis-view" class="side-view" role="tabpanel" aria-live="polite"></div>
+      <div id="tasks-view" class="side-view" role="tabpanel" hidden></div>
+    </aside>
+  </main>
+  <template id="menu-template">
+    <article class="menu-card">
+      <div class="menu-topline"><div class="menu-identity">
+        <span class="menu-index"></span>
+        <label class="compact-field"><span>메뉴명</span><input class="menu-name sample-value" type="text"></label>
+        <label class="compact-field type-field"><span>구분</span><select class="menu-type sample-value"><option>한식</option><option>양식</option><option>기타</option></select></label>
+        <label class="compact-field ratio-field"><span>비율</span><span class="suffix-input"><input class="menu-ratio sample-value" type="number" min="0" max="100" step="1"><small>%</small></span></label>
+      </div><button class="remove-menu icon-button" type="button" aria-label="메뉴 삭제">×</button></div>
+      <div class="inventory-zone-grid">
+        <fieldset class="zone-input-group zone-b"><legend><strong>B 갤리</strong><small>앞 · 오븐 128</small></legend><div class="component-fields"><label><span>트레이</span><input class="b-tray sample-value" type="number" min="0" inputmode="numeric"></label><label><span>앙트레</span><input class="b-entree sample-value" type="number" min="0" inputmode="numeric"></label></div></fieldset>
+        <fieldset class="zone-input-group zone-cd"><legend><strong>C/D 갤리</strong><small>뒤 · 오븐 192</small></legend><div class="component-fields"><label><span>트레이</span><input class="cd-tray sample-value" type="number" min="0" inputmode="numeric"></label><label><span>앙트레</span><input class="cd-entree sample-value" type="number" min="0" inputmode="numeric"></label></div></fieldset>
+        <fieldset class="zone-input-group zone-w"><legend><strong>W 갤리</strong><small>윗층 · 오븐 128</small></legend><div class="component-fields"><label><span>트레이</span><input class="w-tray sample-value" type="number" min="0" inputmode="numeric"></label><label><span>앙트레</span><input class="w-entree sample-value" type="number" min="0" inputmode="numeric"></label></div></fieldset>
+      </div>
+    </article>
+  </template>
+  <script src="engine3.js"></script><script src="app3.js"></script>
+</body>
+</html>
