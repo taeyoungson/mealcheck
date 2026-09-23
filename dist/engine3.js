@@ -306,7 +306,7 @@
     return lines;
   }
 
-  function groupFlowTask(kind, title, flows, itemType, detail) {
+  function groupFlowTask(kind, title, flows, itemType) {
     if (!flows.length) return null;
     const grouped = new Map();
     flows.forEach((flow) => {
@@ -321,8 +321,7 @@
     return {
       kind,
       title,
-      summary: routeText.join(" / "),
-      detail,
+      summary: routeText.join("\n"),
       mutations: flows.map((flow) => ({ menuId: flow.menuId, from: `${flow.from}${itemType}`, to: `${flow.to}${itemType}`, count: flow.count })),
     };
   }
@@ -331,24 +330,22 @@
     if (!result.ready || !result.plan) return [];
     const details = result.plan.details;
     const todos = [];
-    const trayTask = groupFlowTask("tray", "트레이 재배치", flowLines(details, "trayFlows"), "Tray", "필요한 경로의 트레이 이동을 한 번에 처리하세요.");
-    const coldTask = groupFlowTask("cold", "가열 전 앙트레 재배치", flowLines(details, "coldFlows"), "Entree", "W존과 메인덱 사이에서는 가열 전 앙트레만 이동합니다.");
+    const trayTask = groupFlowTask("tray", "트레이 재배치", flowLines(details, "trayFlows"), "Tray");
+    const coldTask = groupFlowTask("cold", "가열 전 앙트레 재배치", flowLines(details, "coldFlows"), "Entree");
     if (trayTask) todos.push(trayTask);
     if (coldTask) todos.push(coldTask);
-    const hotTask = groupFlowTask("hot", "가열 후 앙트레 재배치", flowLines(details, "hotFlows"), "Entree", "가열된 앙트레는 B와 C/D 사이에서만 이동합니다.");
+    const hotTask = groupFlowTask("hot", "가열 후 앙트레 재배치", flowLines(details, "hotFlows"), "Entree");
     const heatSummary = `B ${result.plan.heats.b}개 · C/D ${result.plan.heats.cd}개 · W ${result.plan.heats.w}개 가열`;
-    const heatDetail = details.map((item) => `${item.name}: B ${item.heats.b} / C/D ${item.heats.cd} / W ${item.heats.w}`).join(" · ");
     if (hotTask) {
       hotTask.title = "앙트레 가열 후 재배치";
-      hotTask.summary = `${heatSummary} / ${hotTask.summary}`;
-      hotTask.detail = `${heatDetail} · 가열 후 ${hotTask.detail}`;
+      hotTask.summary = `${heatSummary}\n${hotTask.summary}`;
       todos.push(hotTask);
     } else {
-      todos.push({ kind: "heat", title: "앙트레 가열 후 재배치", summary: `${heatSummary} · 이동 없음`, detail: heatDetail, mutations: [] });
+      todos.push({ kind: "heat", title: "앙트레 가열 후 재배치", summary: `${heatSummary} · 이동 없음`, mutations: [] });
     }
     const totals = { b: 0, cd: 0, w: 0 };
     details.forEach((item) => ZONES.forEach((zone) => { totals[zone] += item.finals[zone]; }));
-    todos.push({ kind: "final", title: "카트 최종 확인", summary: `B ${totals.b}식 · C/D ${totals.cd}식 · W ${totals.w}식`, detail: details.map((item) => `${item.name}: B ${item.finals.b} / C/D ${item.finals.cd} / W ${item.finals.w}`).join(" · "), mutations: [] });
+    todos.push({ kind: "final", title: "카트 최종 확인", summary: `B ${totals.b}식 · C/D ${totals.cd}식 · W ${totals.w}식`, mutations: [] });
     return todos;
   }
 

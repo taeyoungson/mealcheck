@@ -20,6 +20,8 @@ valid.plan.details.flatMap((item) => item.hotFlows).forEach((flow) => assert.ok(
 assert.ok(Engine.buildTodos(valid).length <= 4);
 assert.equal(Engine.buildTodos(valid).some((todo) => todo.title === "앙트레 가열"), false);
 assert.ok(Engine.buildTodos(valid).some((todo) => todo.title === "앙트레 가열 후 재배치"));
+assert.ok(Engine.buildTodos(valid).every((todo) => !("detail" in todo)));
+assert.ok(Engine.buildTodos(valid).filter((todo) => todo.summary.includes("→")).every((todo) => !todo.summary.includes(" / ")));
 
 const withSpecial = Engine.validateService(400, 100, [
   ...sample,

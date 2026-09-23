@@ -227,7 +227,8 @@
     const next = todos.findIndex((todo) => !todo.done);
     todos.forEach((todo, index) => {
       const canUndo = todo.done && index === doneCount - 1;
-      html += `<article class="todo-item${todo.done ? " done" : ""}"><span class="todo-number">${todo.done ? "✓" : index + 1}</span><div class="todo-copy"><h3>${esc(todo.title)}</h3><p>${esc(todo.summary)}</p><details><summary>상세 보기</summary><p>${esc(todo.detail)}</p></details></div>${todo.done ? `<button class="undo-button" type="button" data-undo="${index}" ${canUndo ? "" : "disabled"}>실행 취소</button>` : `<button class="complete-button" type="button" data-complete="${index}" ${index === next ? "" : "disabled"}>완료</button>`}</article>`;
+      const summary = String(todo.summary || "").replaceAll(" / ", "\n");
+      html += `<article class="todo-item${todo.done ? " done" : ""}"><span class="todo-number">${todo.done ? "✓" : index + 1}</span><div class="todo-copy"><h3>${esc(todo.title)}</h3><p>${esc(summary)}</p></div>${todo.done ? `<button class="undo-button" type="button" data-undo="${index}" ${canUndo ? "" : "disabled"}>실행 취소</button>` : `<button class="complete-button" type="button" data-complete="${index}" ${index === next ? "" : "disabled"}>완료</button>`}</article>`;
     });
     html += `</div>${doneCount === todos.length ? `<div class="done-banner">모든 작업을 완료했습니다.</div>` : ""}<button class="view-diagnosis" id="back-diagnosis" type="button">진단 다시 보기</button>`;
     view.innerHTML = html;
