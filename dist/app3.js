@@ -1,7 +1,6 @@
 (() => {
   const Engine = window.MealEngine;
   const STORAGE_KEY = "meal-flow-schedules-v2";
-  const THEME_KEY = "meal-check-theme";
   const uid = (prefix) => `${prefix}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
   const menu = (name, type, ratio, bTray, bEntree, cdTray, cdEntree, wTray, wEntree) => ({ id: uid("m"), name, type, ratio, bTray, bEntree, cdTray, cdEntree, wTray, wEntree });
   const specialMenu = () => ({ ...menu("스페셜밀", "특별식", 0, 0, 0, 0, 0, 0, 0), special: true });
@@ -60,22 +59,6 @@
   const touch = () => { state.sample = false; document.querySelectorAll(".sample-value").forEach((el) => el.classList.remove("sample-value")); $("#sample-badge").hidden = true; persistCurrent(); };
   const quickEntrySupported = () => window.matchMedia("(max-width: 820px), (pointer: coarse)").matches;
   let quickEntry = null;
-
-  function applyTheme(theme) {
-    const dark = theme === "dark";
-    document.documentElement.dataset.theme = dark ? "dark" : "light";
-    $("#theme-icon").textContent = dark ? "☀" : "☾";
-    $("#theme-toggle").ariaLabel = dark ? "밝은 모드로 전환" : "야간 모드로 전환";
-    $("#theme-toggle").title = $("#theme-toggle").ariaLabel;
-    $("#theme-toggle").ariaPressed = String(dark);
-    $('meta[name="theme-color"]').content = dark ? "#07131c" : "#071725";
-  }
-
-  function toggleTheme() {
-    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    try { localStorage.setItem(THEME_KEY, next); } catch (_) { /* 저장 불가 시 현재 실행에만 적용 */ }
-    applyTheme(next);
-  }
 
   function quickCurrent() {
     return quickEntry?.inputs[quickEntry.index] || null;
@@ -371,7 +354,6 @@
     state.activeService = state.services.length - 1; state.rightView = "diagnosis"; touch(); renderAll();
   });
   $("#reset-all").addEventListener("click", () => { state = activeScheduleId ? blankState() : sampleState(); persistCurrent(); renderAll(); });
-  $("#theme-toggle").addEventListener("click", toggleTheme);
   $("#open-schedules").addEventListener("click", openDrawer);
   $("#close-schedules").addEventListener("click", closeDrawer);
   $("#drawer-backdrop").addEventListener("click", (event) => { if (event.target === $("#drawer-backdrop")) closeDrawer(); });
@@ -445,6 +427,5 @@
   } else {
     updateOfflineStatus("오프라인 미지원", true);
   }
-  applyTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
   renderAll();
 })();

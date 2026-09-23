@@ -1,5 +1,5 @@
-const CACHE_NAME = "meal-check-v7";
-const APP_ASSETS = ["./", "./index.html", "./styles3.css", "./engine3.js", "./app3.js", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png"];
+const CACHE_NAME = "meal-check-v8";
+const APP_ASSETS = ["./", "./index.html", "./styles3.css?v=8", "./engine3.js?v=8", "./app3.js?v=8", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_ASSETS)).then(() => self.skipWaiting()));
@@ -19,11 +19,8 @@ self.addEventListener("fetch", (event) => {
     }).catch(() => caches.match("./index.html")));
     return;
   }
-  event.respondWith(caches.match(event.request).then((cached) => {
-    const network = fetch(event.request).then((response) => {
-      if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
-      return response;
-    }).catch(() => cached);
-    return cached || network;
-  }));
+  event.respondWith(fetch(event.request).then((response) => {
+    if (response.ok) caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
+    return response;
+  }).catch(() => caches.match(event.request)));
 });
