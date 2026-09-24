@@ -1,5 +1,5 @@
-const CACHE_NAME = "meal-check-v8";
-const APP_ASSETS = ["./", "./index.html", "./styles3.css?v=8", "./engine3.js?v=8", "./app3.js?v=8", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png"];
+const CACHE_NAME = "meal-check-v9";
+const APP_ASSETS = ["./", "./index.html", "./styles3.css?v=9", "./engine3.js?v=9", "./app3.js?v=9", "./manifest.webmanifest", "./icon.svg", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_ASSETS)).then(() => self.skipWaiting()));

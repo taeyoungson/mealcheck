@@ -229,13 +229,37 @@
     const disabled = locked ? "disabled" : "";
     const lockedClass = locked ? " locked-input" : "";
     const regularMenus = service.menus.filter((item) => !item.special);
-    const menuRows = regularMenus.map((item, index) => `<div class="menu-setup-row">
-      <span class="menu-index">${index + 1}</span>
-      <label><span>메뉴명</span><input class="sample-value${lockedClass}" data-menu="${item.id}" data-key="name" type="text" value="${esc(item.name)}" ${disabled}></label>
-      <label><span>구분</span><select class="sample-value${lockedClass}" data-menu="${item.id}" data-key="type" ${disabled}><option ${item.type === "한식" ? "selected" : ""}>한식</option><option ${item.type === "양식" ? "selected" : ""}>양식</option><option ${item.type === "기타" ? "selected" : ""}>기타</option></select></label>
-      <label class="ratio-cell"><span>비율</span><span class="suffix-input"><input class="sample-value${lockedClass}" data-menu="${item.id}" data-key="ratio" data-numeric="true" type="number" min="0" max="100" value="${item.ratio}" ${disabled}><small>%</small></span></label>
-      <button class="icon-button" data-remove="${item.id}" type="button" aria-label="${esc(item.name)} 메뉴 삭제" ${locked || regularMenus.length === 1 ? "disabled" : ""}>×</button>
-    </div>`).join("");
+    const ratioTotal = regularMenus.reduce((sum, item) => sum + Math.max(0, Number(item.ratio) || 0), 0);
+    if (regularMenus.length && ratioTotal !== 100) {
+      if (ratioTotal === 0) regularMenus.forEach((item, index) => { item.ratio = index === 0 ? 100 : 0; });
+      else {
+        let assigned = 0;
+        regularMenus.forEach((item, index) => {
+          const next = index === regularMenus.length - 1 ? 100 - assigned : Math.round((Math.max(0, Number(item.ratio) || 0) / ratioTotal) * 100);
+          item.ratio = Math.max(0, next);
+          assigned += item.ratio;
+        });
+      }
+    }
+    const ratioColors = ["#0f8f87", "#4f80b7", "#d49a34", "#8a69af", "#d46f67", "#4f9d66"];
+    const ratioGradient = () => {
+      let cursor = 0;
+      const stops = [];
+      regularMenus.forEach((item, index) => {
+        const end = cursor + Number(item.ratio || 0);
+        const color = ratioColors[index % ratioColors.length];
+        stops.push(`${color} ${cursor}%`, `${color} ${end}%`);
+        cursor = end;
+      });
+      return `linear-gradient(to right, ${stops.join(",")})`;
+    };
+    const menuNameFields = regularMenus.map((item, index) => `<label class="menu-name-cell"><span class="menu-index">${index + 1}</span><input class="sample-value${lockedClass}" data-menu="${item.id}" data-key="name" type="text" value="${esc(item.name)}" aria-label="${index + 1}번 메뉴 이름" ${disabled}><button class="icon-button" data-remove="${item.id}" type="button" aria-label="${esc(item.name)} 메뉴 삭제" ${locked || regularMenus.length === 1 ? "disabled" : ""}>×</button></label>`).join("");
+    let boundary = 0;
+    const boundarySliders = regularMenus.slice(0, -1).map((item, index) => {
+      boundary += Number(item.ratio || 0);
+      return `<input class="ratio-boundary-slider" data-boundary="${index}" type="range" min="0" max="100" step="1" value="${boundary}" aria-label="${esc(item.name)}과 ${esc(regularMenus[index + 1].name)} 비율 경계" ${disabled}>`;
+    }).join("");
+    const ratioLabels = regularMenus.map((item, index) => `<span data-ratio-output="${item.id}" style="--segment-color:${ratioColors[index % ratioColors.length]}">${esc(item.name)} <strong>${item.ratio}%</strong></span>`).join("");
     const zones = [
       { id: "b", title: "B 갤리", sub: "앞 · 오븐 128", tone: "zone-b" },
       { id: "cd", title: "C/D 갤리", sub: "뒤 · 오븐 192", tone: "zone-cd" },
@@ -245,7 +269,7 @@
     const galleySections = zones.map((zone) => `<section class="galley-entry ${zone.tone}">
       <div class="galley-entry-head"><div><span class="galley-order">${zone.id === "b" ? "01" : zone.id === "cd" ? "02" : "03"}</span><h3>${zone.title}</h3></div><small>${zone.sub}</small></div>
       <div class="inventory-table-head"><span>메뉴</span><span>트레이</span><span>앙트레</span></div>
-      ${service.menus.map((item, index) => `<div class="inventory-row${item.special ? " special-row" : ""}"><div class="inventory-menu"><span>${item.special ? "S" : index + 1}</span><strong>${esc(item.name)}</strong><small>${item.special ? `${zone.title} 신청 ${service.specialRequests[zone.id]}명` : `${esc(item.type)} · ${item.ratio}%`}</small></div><label><span>${esc(item.name)} 트레이</span><input class="sample-value inventory-input ${zone.id}-tray${lockedClass}" data-menu="${item.id}" data-key="${zone.id}Tray" data-numeric="true" type="number" min="0" ${quickInputAttributes} value="${item[`${zone.id}Tray`]}" ${disabled}></label><label><span>${esc(item.name)} 앙트레</span><input class="sample-value inventory-input ${zone.id}-entree${lockedClass}" data-menu="${item.id}" data-key="${zone.id}Entree" data-numeric="true" type="number" min="0" ${quickInputAttributes} value="${item[`${zone.id}Entree`]}" ${disabled}></label></div>`).join("")}
+      ${service.menus.map((item, index) => `<div class="inventory-row${item.special ? " special-row" : ""}"><div class="inventory-menu"><span>${item.special ? "S" : index + 1}</span><strong>${esc(item.name)}</strong><small ${item.special ? "" : `data-menu-summary="${item.id}"`}>${item.special ? `${zone.title} 신청 ${service.specialRequests[zone.id]}명` : `${item.ratio}%`}</small></div><label><span>${esc(item.name)} 트레이</span><input class="sample-value inventory-input ${zone.id}-tray${lockedClass}" data-menu="${item.id}" data-key="${zone.id}Tray" data-numeric="true" type="number" min="0" ${quickInputAttributes} value="${item[`${zone.id}Tray`]}" ${disabled}></label><label><span>${esc(item.name)} 앙트레</span><input class="sample-value inventory-input ${zone.id}-entree${lockedClass}" data-menu="${item.id}" data-key="${zone.id}Entree" data-numeric="true" type="number" min="0" ${quickInputAttributes} value="${item[`${zone.id}Entree`]}" ${disabled}></label></div>`).join("")}
     </section>`).join("");
     host.innerHTML = `<div class="service-heading"><div><h3>${esc(service.name)} 입력</h3></div><div class="menu-actions"><button class="small-button" id="add-menu" type="button" ${disabled}>＋ 메뉴</button></div></div>
       <section class="special-requests"><div class="section-title"><div><span>스페셜밀 신청자</span></div></div><div class="special-request-grid">
@@ -253,14 +277,43 @@
         <label><span>C/D 갤리</span><input class="sample-value${lockedClass}" data-request="cd" type="number" min="0" inputmode="numeric" value="${service.specialRequests.cd}" ${disabled}><small>명</small></label>
         <label><span>W 갤리</span><input class="sample-value${lockedClass}" data-request="w" type="number" min="0" inputmode="numeric" value="${service.specialRequests.w}" ${disabled}><small>명</small></label>
       </div></section>
-      <section class="menu-setup"><div class="section-title"><div><span>메뉴 설정</span><small>일반식 비율 · 스페셜밀은 각 갤리에 자동 표시</small></div></div>${menuRows}</section>
+      <section class="menu-setup"><div class="section-title"><div><span>메뉴 비율</span><strong id="ratio-total">합계 100%</strong></div></div><div class="menu-allocation"><div class="menu-name-row" style="--menu-count:${regularMenus.length}">${menuNameFields}</div><div class="ratio-label-row">${ratioLabels}</div><div class="ratio-slider-stack"><div class="ratio-allocation-bar" style="background:${ratioGradient()}"></div>${boundarySliders}</div></div></section>
       <div class="galley-entry-list">${galleySections}</div>
       ${state.services.length > 1 ? `<div class="service-remove-row"><button class="text-button" id="remove-service" type="button" ${disabled}>이 서비스 삭제</button></div>` : ""}`;
     host.querySelectorAll("[data-key]").forEach((input) => {
       const item = service.menus.find((entry) => entry.id === input.dataset.menu);
       input.addEventListener("input", () => { item[input.dataset.key] = input.dataset.numeric ? Number(input.value) : input.value; touch(); renderDynamic(); });
-      input.addEventListener("change", () => { item[input.dataset.key] = input.dataset.numeric ? Number(input.value) : input.value; if (input.dataset.key === "name" || input.dataset.key === "type") renderAll(); else renderDynamic(); });
+      input.addEventListener("change", () => { item[input.dataset.key] = input.dataset.numeric ? Number(input.value) : input.value; if (input.dataset.key === "name") renderAll(); else renderDynamic(); });
     });
+    const updateRatioDisplay = () => {
+      $(".ratio-allocation-bar", host).style.background = ratioGradient();
+      regularMenus.forEach((item) => {
+        host.querySelector(`[data-ratio-output="${item.id}"] strong`).textContent = `${item.ratio}%`;
+        host.querySelectorAll("[data-menu-summary]").forEach((label) => { if (label.dataset.menuSummary === item.id) label.textContent = `${item.ratio}%`; });
+      });
+      let cumulative = 0;
+      const sliders = [...host.querySelectorAll("[data-boundary]")];
+      sliders.forEach((slider, index) => {
+        cumulative += Number(regularMenus[index].ratio || 0);
+        slider.value = cumulative;
+      });
+    };
+    host.querySelectorAll("[data-boundary]").forEach((slider) => {
+      slider.addEventListener("input", () => {
+        const index = Number(slider.dataset.boundary);
+        const sliders = [...host.querySelectorAll("[data-boundary]")];
+        const previous = index === 0 ? 0 : Number(sliders[index - 1].value);
+        const next = index === sliders.length - 1 ? 100 : Number(sliders[index + 1].value);
+        const value = Math.max(previous, Math.min(next, Number(slider.value)));
+        regularMenus[index].ratio = value - previous;
+        regularMenus[index + 1].ratio = next - value;
+        slider.value = value;
+        updateRatioDisplay();
+        touch();
+        renderDynamic();
+      });
+    });
+    updateRatioDisplay();
     host.querySelectorAll("[data-request]").forEach((input) => input.addEventListener("input", () => { service.specialRequests[input.dataset.request] = Number(input.value); touch(); renderDynamic(); }));
     if (quickEntrySupported() && !locked) host.querySelectorAll(".inventory-input").forEach((input) => input.addEventListener("click", () => openQuickEntry(input)));
     host.querySelectorAll("[data-remove]").forEach((button) => button.addEventListener("click", () => { const index = service.menus.findIndex((item) => item.id === button.dataset.remove); service.menus.splice(index, 1); touch(); renderAll(); }));
